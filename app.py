@@ -66,73 +66,127 @@ def logout():
         return jsonify({"error": "An error occurred during logout"}), 500
 
 
-@app.route('/categories', methods=['POST'])
+@app.route('/customers', methods=['POST'])
 @jwt_required()
-def add_category():
+def add_customer():
     try:
         data = request.get_json()
-        category = crud.create_category(data['name'])
-        return jsonify({"id": category.id, "name": category.name})
+        customer = crud.create_customer(data['name'], data['email'], data.get('phone'))
+        return jsonify({"id": customer.id, "name": customer.name, "email": customer.email, "phone": customer.phone})
     except Exception:
-        return jsonify({"error": "An error occurred while adding the category"}), 500
+        return jsonify({"error": "An error occurred while adding the customer"}), 500
 
 
-@app.route('/instruments', methods=['POST'])
+@app.route('/customers/<int:customer_id>', methods=['GET'])
 @jwt_required()
-def add_instrument():
+def get_customer(customer_id):
+    try:
+        customer = crud.get_customer_by_id(customer_id)
+        if customer:
+            return jsonify({"id": customer.id, "name": customer.name, "email": customer.email, "phone": customer.phone})
+        return jsonify({"error": "Customer not found"}), 404
+    except Exception:
+        return jsonify({"error": "An error occurred while retrieving the customer"}), 500
+
+
+@app.route('/customers', methods=['GET'])
+@jwt_required()
+def get_all_customers():
+    try:
+        customers = crud.get_all_customers()
+        return jsonify([{"id": customer.id, "name": customer.name, "email": customer.email, "phone": customer.phone} for customer in customers])
+    except Exception:
+        return jsonify({"error": "An error occurred while retrieving customers"}), 500
+
+
+@app.route('/rented_books', methods=['POST'])
+@jwt_required()
+def add_rented_book():
     try:
         data = request.get_json()
-        instrument = crud.create_instrument(data['name'], data['price'], data['category_id'])
-        return jsonify({"id": instrument.id, "name": instrument.name, "price": instrument.price, "category_id": instrument.category_id})
+        rented_book = crud.create_rented_book(
+            data['title'], data['rent_date'], data['customer_id'], data.get('return_date')
+        )
+        return jsonify({
+            "id": rented_book.id,
+            "title": rented_book.title,
+            "rent_date": str(rented_book.rent_date),
+            "return_date": str(rented_book.return_date) if rented_book.return_date else None,
+            "customer_id": rented_book.customer_id
+        })
     except Exception:
-        return jsonify({"error": "An error occurred while adding the instrument"}), 500
+        return jsonify({"error": "An error occurred while adding the rented book"}), 500
 
 
-@app.route('/instruments/<int:instrument_id>', methods=['GET'])
+@app.route('/rented_books/<int:book_id>', methods=['GET'])
 @jwt_required()
-def get_instrument(instrument_id):
+def get_rented_book(book_id):
     try:
-        instrument = crud.get_instrument_by_id(instrument_id)
-        if instrument:
-            return jsonify({"id": instrument.id, "name": instrument.name, "price": instrument.price, "category_id": instrument.category_id})
-        return jsonify({"error": "Instrument not found"}), 404
+        rented_book = crud.get_rented_book_by_id(book_id)
+        if rented_book:
+            return jsonify({
+                "id": rented_book.id,
+                "title": rented_book.title,
+                "rent_date": str(rented_book.rent_date),
+                "return_date": str(rented_book.return_date) if rented_book.return_date else None,
+                "customer_id": rented_book.customer_id
+            })
+        return jsonify({"error": "Rented book not found"}), 404
     except Exception:
-        return jsonify({"error": "An error occurred while retrieving the instrument"}), 500
+        return jsonify({"error": "An error occurred while retrieving the rented book"}), 500
 
 
-@app.route('/instruments', methods=['GET'])
+@app.route('/rented_books', methods=['GET'])
 @jwt_required()
-def get_all_instruments():
+def get_all_rented_books():
     try:
-        instruments = crud.get_all_instruments()
-        return jsonify([{"id": inst.id, "name": inst.name, "price": inst.price, "category_id": inst.category_id} for inst in instruments])
+        rented_books = crud.get_all_rented_books()
+        return jsonify([{
+            "id": book.id,
+            "title": book.title,
+            "rent_date": str(book.rent_date),
+            "return_date": str(book.return_date) if book.return_date else None,
+            "customer_id": book.customer_id
+        } for book in rented_books])
     except Exception:
-        return jsonify({"error": "An error occurred while retrieving instruments"}), 500
+        return jsonify({"error": "An error occurred while retrieving rented books"}), 500
 
 
-@app.route('/instruments/<int:instrument_id>', methods=['PUT'])
+@app.route('/rented_books/<int:book_id>', methods=['PUT'])
 @jwt_required()
-def update_instrument(instrument_id):
+def update_rented_book(book_id):
     try:
         data = request.get_json()
-        instrument = crud.update_instrument(instrument_id, data.get('name'), data.get('price'), data.get('category_id'))
-        if instrument:
-            return jsonify({"id": instrument.id, "name": instrument.name, "price": instrument.price, "category_id": instrument.category_id})
-        return jsonify({"error": "Instrument not found"}), 404
+        rented_book = crud.update_rented_book(
+            book_id,
+            data.get('title'),
+            data.get('rent_date'),
+            data.get('return_date'),
+            data.get('customer_id')
+        )
+        if rented_book:
+            return jsonify({
+                "id": rented_book.id,
+                "title": rented_book.title,
+                "rent_date": str(rented_book.rent_date),
+                "return_date": str(rented_book.return_date) if rented_book.return_date else None,
+                "customer_id": rented_book.customer_id
+            })
+        return jsonify({"error": "Rented book not found"}), 404
     except Exception:
-        return jsonify({"error": "An error occurred while updating the instrument"}), 500
+        return jsonify({"error": "An error occurred while updating the rented book"}), 500
 
 
-@app.route('/instruments/<int:instrument_id>', methods=['DELETE'])
+@app.route('/rented_books/<int:book_id>', methods=['DELETE'])
 @jwt_required()
-def delete_instrument(instrument_id):
+def delete_rented_book(book_id):
     try:
-        instrument = crud.delete_instrument(instrument_id)
-        if instrument:
-            return jsonify({"message": "Instrument deleted"})
-        return jsonify({"error": "Instrument not found"}), 404
+        rented_book = crud.delete_rented_book(book_id)
+        if rented_book:
+            return jsonify({"message": "Rented book deleted"})
+        return jsonify({"error": "Rented book not found"}), 404
     except Exception:
-        return jsonify({"error": "An error occurred while deleting the instrument"}), 500
+        return jsonify({"error": "An error occurred while deleting the rented book"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

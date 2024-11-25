@@ -12,7 +12,7 @@ app.config.from_object(Config)
 db.init_app(app)
 migrate.init_app(app, db)
 jwt = JWTManager(app)
-
+#tokens
 revoked_tokens = set()
 
 @jwt.token_in_blocklist_loader
